@@ -60,7 +60,8 @@ class SixelWriter:
              ncolor=256,
              alpha_threshold=0,
              chromakey=False,
-             fast=True):
+             fast=True,
+             keep_aspect_ratio=False):
 
         try:
             filename.seek(0)
@@ -82,7 +83,8 @@ class SixelWriter:
                                              ncolor,
                                              alpha_threshold=alpha_threshold,
                                              chromakey=chromakey,
-                                             fast=fast)
+                                             fast=fast,
+                                             keep_aspect_ratio=keep_aspect_ratio)
             sixel_converter.write(output, body_only=self._body_only)
 
         finally:

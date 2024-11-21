@@ -17,14 +17,15 @@ class SixelConverter:
                  ncolor=256,
                  alpha_threshold=0,
                  chromakey=False,
-                 fast=True):
+                 fast=True,
+                 keep_aspect_ratio=False):
         image = Image.open(file)
         image = image.convert("RGB")
-        self._init_converter(image, f8bit, w, h, ncolor, alpha_threshold, chromakey, fast)
+        self._init_converter(image, f8bit, w, h, ncolor, alpha_threshold, chromakey, fast, keep_aspect_ratio)
         if alpha_threshold > 0:
             self.rawdata = Image.open(file).convert("RGBA").getdata()
 
-    def _init_converter(self, image, f8bit, w, h, ncolor, alpha_threshold, chromakey, fast):
+    def _init_converter(self, image, f8bit, w, h, ncolor, alpha_threshold, chromakey, fast, keep_aspect_ratio):
         """Common initialization code for all converter variants"""
         self.__alpha_threshold = alpha_threshold
         self.__chromakey = chromakey
@@ -46,10 +47,16 @@ class SixelConverter:
         image = image.convert("P", palette=Image.Palette.ADAPTIVE, colors=ncolor)
         if w or h:
             width, height = image.size
+            aspect_ratio = width / float(height)
             if not w:
                 w = width
             if not h:
                 h = height
+            if keep_aspect_ratio:
+                if aspect_ratio > 1:
+                    h = int(w / aspect_ratio)
+                else:
+                    w = int(h * aspect_ratio)
             image = image.resize((w, h))
 
         self.palette = image.getpalette()
@@ -290,7 +297,8 @@ class SixelConverterFromArray(SixelConverter):
                  ncolor=256,
                  alpha_threshold=0,
                  chromakey=False,
-                 fast=True):
+                 fast=True,
+                 keep_aspect_ratio=False):
         """
         Initialize RGBSixelConverter with a numpy array of RGB values.
         
@@ -310,4 +318,4 @@ class SixelConverterFromArray(SixelConverter):
             raise ValueError("Input array must have shape (height, width, 3)")
         
         image = Image.fromarray(rgb_array.astype('uint8'))
-        self._init_converter(image, f8bit, w, h, ncolor, alpha_threshold, chromakey, fast)
+        self._init_converter(image, f8bit, w, h, ncolor, alpha_threshold, chromakey, fast, keep_aspect_ratio)

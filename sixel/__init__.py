@@ -110,6 +110,11 @@ def main():
                       dest="version",
                       default=False,
                       help="Show version")
+    parser.add_option("-k", "--keep-aspect-ratio",
+                      action="store_true",
+                      dest="keep_aspect_ratio",
+                      default=False,
+                      help="Keep aspect ratio. The image will be scaled to fit into the given size.")
 
     options, args = parser.parse_args()
 
@@ -189,7 +194,8 @@ def main():
                     ncolor=int(options.ncolor),
                     alpha_threshold=options.alpha_threshold,
                     chromakey=options.chromakey,
-                    fast=options.fast)
+                    fast=options.fast,
+                    keep_aspect_ratio=options.keep_aspect_ratio)
     except KeyboardInterrupt:
         pass
 
