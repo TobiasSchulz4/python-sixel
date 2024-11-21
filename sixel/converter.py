@@ -5,6 +5,7 @@
 
 from io import StringIO
 from PIL import Image
+import numpy as np
 
 
 class SixelConverter:
@@ -17,7 +18,14 @@ class SixelConverter:
                  alpha_threshold=0,
                  chromakey=False,
                  fast=True):
+        image = Image.open(file)
+        image = image.convert("RGB")
+        self._init_converter(image, f8bit, w, h, ncolor, alpha_threshold, chromakey, fast)
+        if alpha_threshold > 0:
+            self.rawdata = Image.open(file).convert("RGBA").getdata()
 
+    def _init_converter(self, image, f8bit, w, h, ncolor, alpha_threshold, chromakey, fast):
+        """Common initialization code for all converter variants"""
         self.__alpha_threshold = alpha_threshold
         self.__chromakey = chromakey
         self._slots = [0] * 257
@@ -35,10 +43,7 @@ class SixelConverter:
             self.DCS = '\x1bP'
             self.ST = '\x1b\\'
 
-        image = Image.open(file)
-        image = image.convert("RGB").convert("P",
-                                             palette=Image.Palette.ADAPTIVE,
-                                             colors=ncolor)
+        image = image.convert("P", palette=Image.Palette.ADAPTIVE, colors=ncolor)
         if w or h:
             width, height = image.size
             if not w:
@@ -50,9 +55,6 @@ class SixelConverter:
         self.palette = image.getpalette()
         self.data = image.getdata()
         self.width, self.height = image.size
-
-        if alpha_threshold > 0:
-            self.rawdata = Image.open(file).convert("RGBA").getdata()
 
     def __write_header(self, output):
         # start Device Control String (DCS)
@@ -278,3 +280,34 @@ class SixelConverter:
         self.__write_body_section(output)
         if not body_only:
             self.__write_terminator(output)
+
+
+class SixelConverterFromArray(SixelConverter):
+    def __init__(self, rgb_array,
+                 f8bit=False,
+                 w=None,
+                 h=None,
+                 ncolor=256,
+                 alpha_threshold=0,
+                 chromakey=False,
+                 fast=True):
+        """
+        Initialize RGBSixelConverter with a numpy array of RGB values.
+        
+        Args:
+            rgb_array: numpy array of shape (height, width, 3) with values 0-255
+            f8bit: 8-bit mode flag
+            w: target width (optional)
+            h: target height (optional)
+            ncolor: number of colors (max 256)
+            alpha_threshold: transparency threshold
+            chromakey: chromakey flag
+            fast: fast mode flag
+        """
+        if not isinstance(rgb_array, np.ndarray):
+            raise TypeError("Input must be a numpy array")
+        if rgb_array.ndim != 3 or rgb_array.shape[2] != 3:
+            raise ValueError("Input array must have shape (height, width, 3)")
+        
+        image = Image.fromarray(rgb_array.astype('uint8'))
+        self._init_converter(image, f8bit, w, h, ncolor, alpha_threshold, chromakey, fast)
